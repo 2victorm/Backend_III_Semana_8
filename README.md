@@ -111,8 +111,3 @@ En menos de un minuto el retiro pasa solo a `APROBADA`.
 ```powershell
 docker compose down
 ```
-
-
-## Entrega
-Código en GitHub con este README y las evidencias de ejecución, todo en una carpeta comprimida con el formato `Exp3_S8_nombres_apellidos`.
-No incluir `.env`, carpetas `target` ni contraseñas de la base local.
