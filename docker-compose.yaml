@@ -1,0 +1,167 @@
+name: banco-xyz-s8
+services:
+  activemq:
+    image: apache/activemq-classic:6.1.8
+    ports:
+    - 127.0.0.1:8161:8161
+    volumes:
+    - activemq-data:/opt/apache-activemq/data
+    restart: unless-stopped
+  auth-server:
+    build: ./auth-server
+    ports:
+    - 127.0.0.1:9000:9000
+    environment:
+      JAVA_TOOL_OPTIONS: -Xms64m -Xmx384m
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - -fkSs
+      - http://localhost:9000/.well-known/oauth-authorization-server
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 40s
+    restart: unless-stopped
+  config-server:
+    build: ./config-server
+    ports:
+    - 127.0.0.1:8888:8888
+    environment:
+      JAVA_TOOL_OPTIONS: -Xms64m -Xmx384m
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - -fkSs
+      - http://admin:admin@localhost:8888/banco-servicios/default
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 40s
+    restart: unless-stopped
+  discovery-server:
+    build: ./discovery-server
+    ports:
+    - 127.0.0.1:8761:8761
+    environment:
+      JAVA_TOOL_OPTIONS: -Xms64m -Xmx384m
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - -fkSs
+      - http://eureka:eureka2026@localhost:8761/
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 40s
+    restart: unless-stopped
+  banco-servicios:
+    build: ./banco-servicios
+    ports:
+    - 127.0.0.1:8080:8080
+    environment:
+      JAVA_TOOL_OPTIONS: -Xms64m -Xmx384m
+      CONFIG_URL: http://config-server:8888
+      EUREKA_URL: http://eureka:eureka2026@discovery-server:8761/eureka/
+      BROKER_URL: tcp://activemq:61616
+      OAUTH_ISSUER: http://localhost:9000
+      OAUTH_JWKS: http://auth-server:9000/oauth2/jwks
+      DB_URL: jdbc:postgresql://host.docker.internal:5432/${DB_NAME:-banco_xyz}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:?Crea el archivo .env con la clave de tu PostgreSQL
+        local}
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - -fkSs
+      - https://localhost:8080/actuator/health
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 40s
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      auth-server:
+        condition: service_healthy
+      activemq:
+        condition: service_started
+    restart: unless-stopped
+    extra_hosts:
+    - host.docker.internal:host-gateway
+  ms-cuentas:
+    build: ./ms-cuentas
+    ports:
+    - 127.0.0.1:8091:8091
+    environment:
+      JAVA_TOOL_OPTIONS: -Xms64m -Xmx384m
+      CONFIG_URL: http://config-server:8888
+      EUREKA_URL: http://eureka:eureka2026@discovery-server:8761/eureka/
+      BROKER_URL: tcp://activemq:61616
+      OAUTH_ISSUER: http://localhost:9000
+      OAUTH_JWKS: http://auth-server:9000/oauth2/jwks
+      DB_URL: jdbc:postgresql://host.docker.internal:5432/${DB_NAME:-banco_xyz}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:?Crea el archivo .env con la clave de tu PostgreSQL
+        local}
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - -fkSs
+      - http://localhost:8091/actuator/health
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 40s
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      auth-server:
+        condition: service_healthy
+      activemq:
+        condition: service_started
+    restart: unless-stopped
+    extra_hosts:
+    - host.docker.internal:host-gateway
+  ms-notificaciones:
+    build: ./ms-notificaciones
+    ports:
+    - 127.0.0.1:8093:8093
+    environment:
+      JAVA_TOOL_OPTIONS: -Xms64m -Xmx384m
+      CONFIG_URL: http://config-server:8888
+      EUREKA_URL: http://eureka:eureka2026@discovery-server:8761/eureka/
+      BROKER_URL: tcp://activemq:61616
+      OAUTH_ISSUER: http://localhost:9000
+      OAUTH_JWKS: http://auth-server:9000/oauth2/jwks
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - -fkSs
+      - http://localhost:8093/actuator/health
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 40s
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      auth-server:
+        condition: service_healthy
+      activemq:
+        condition: service_started
+    restart: unless-stopped
+volumes:
+  activemq-data: {}
