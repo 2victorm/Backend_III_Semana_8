@@ -1,5 +1,8 @@
 # Banco XYZ — Semana 8
 
+## Objetivo
+Continuar el proyecto de la semana 7 agregando seguridad con OAuth 2.0 y ejecutando todo con Docker.
+Se mantienen PostgreSQL local, la mensajería JMS con ActiveMQ y la tolerancia a fallos con Resilience4j.
 
 ## Estructura
 
